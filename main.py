@@ -1,14 +1,14 @@
-# disable pygame initial console print 
+# DISABLE INITIAL PYGAME CONSOLE PRINT
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
-# Imports
+# IMPORTS
 import sys, pygame
 from Border import BorderLine
 from AgentRouter import AgentRouter
 from FixedRouter import FixedRouter
 
-# Constants
+# INITIALIZE CONSTANTS
 WINDOWSIZE = WIDTH, HEIGHT  = (1000,800)
 BORDERPADDING               = 50
 
@@ -25,8 +25,9 @@ FIXED_ROUTER_AREA_TRANSPARENCY  = (153, 230, 153, 128)
 GRID_COLUMNS    = 40
 GRID_ROWS       = 32
 
-screen = pygame.display.set_mode(WINDOWSIZE, pygame.NOFRAME)
-routerSurface = pygame.Surface(WINDOWSIZE, pygame.SRCALPHA)
+# Create our display windows and a drawing surface for our routers so they can be semt-transparent on the screen
+screen = pygame.display.set_mode( WINDOWSIZE, pygame.NOFRAME )
+routerSurface = pygame.Surface( WINDOWSIZE, pygame.SRCALPHA )
 
 def main():
     # Initialize pygame and create window with no frame of a given size
@@ -36,8 +37,6 @@ def main():
     # Initialize Text Surface to display on screen
     myfont = pygame.font.SysFont('arial', 16, True)
     quitText = myfont.render('Press \'ESC\' to Exit', False, (0, 0, 0))
-    # Initialize Screen to display program to End User
-    #screen = pygame.display.set_mode(WINDOWSIZE, pygame.NOFRAME, pygame.SRCALPHA)
     
     # Fill borderLines in the following order:
     # TOP, RIGHT, BOTTOM, LEFT
@@ -60,7 +59,7 @@ def main():
     DrawBorders(borderLines, screen)
     # Display the textsurface we want to show on the screen
     screen.blit(quitText,(20,20))
-
+    
     #agentSurface = pygame.Surface((WIDTH,HEIGHT), pygame.SRCALPHA)  # the size of your rect
     #agentSurface.fill(AGENT_ROUTER_AREA_TRANSPARENCY)           # this fills the entire surface
     screen.blit(routerSurface, (0,0))    # (0,0) are the top-left coordinates
@@ -68,13 +67,16 @@ def main():
     #pygame.draw.circle(screen, AGENT_ROUTER_COLOUR, (agent.xPos, agent.yPos), agent.radius)
     #pygame.draw.circle(screen, AGENT_ROUTER_COLOUR, (agent.xPos, agent.yPos), agent.connectionRadius, 3)
     
+    # Main Loop for Game
     while True:
         for event in pygame.event.get(): 
             if (event.type == pygame.KEYDOWN) and (event.key == pygame.K_ESCAPE):
                 pygame.quit()
                 sys.exit()
+        
         # Update the screen Contents
         Update()
+        
         # Render the Screen Contents
         Render()
 
