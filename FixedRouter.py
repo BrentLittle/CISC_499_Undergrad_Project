@@ -5,4 +5,4 @@ class FixedRouter(pygame.sprite.Sprite):
         self.xPos = xPos
         self.yPos = yPos
         self.connectionRadius = connectionRadius
-        self.agentDiameter = 20
+        self.radius = 12
