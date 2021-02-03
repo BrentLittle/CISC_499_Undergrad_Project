@@ -4,6 +4,7 @@ environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
 # IMPORTS
 import sys, pygame
+from pynput.keyboard import Key, Controller
 from Border import BorderLine
 from AgentRouter import AgentRouter
 from FixedRouter import FixedRouter
@@ -18,14 +19,13 @@ BORDER_INFILL_COLOUR    = (255,255,255)
 GRID_COLOUR             = (235,235,235)
 
 AGENT_ROUTER_COLOUR             = (230, 184,   0, 255)
-AGENT_ROUTER_AREA_TRANSPARENCY  = (255, 224, 102,  32)
+AGENT_ROUTER_AREA_TRANSPARENCY  = (255, 224, 102,  50)
 FIXED_ROUTER_COLOUR             = ( 46, 184,  46, 255)
 FIXED_ROUTER_AREA_TRANSPARENCY  = (153, 230, 153,  32)
 
 GRID_COLUMNS    = 40
 GRID_ROWS       = 32
-
-MOVEMENT_SPEED = 1
+MOVEMENT_SPEED  = 1
 
 # Initialize pygame and create window with no frame of a given size
 pygame.init()
@@ -39,10 +39,10 @@ screen = pygame.display.set_mode( WINDOWSIZE, pygame.NOFRAME  )
 routerSurface =   pygame.Surface( WINDOWSIZE, pygame.SRCALPHA )
 peopleSurface =   pygame.Surface( WINDOWSIZE, pygame.SRCALPHA )
 
-# setup a clock to limit movement speeds
+# setup a clock to limit the number of frames per second
 fps = pygame.time.Clock()
 
-        #   UP     DOWN   LEFT   RIGHT
+#           UP     DOWN   LEFT   RIGHT
 movement = [False, False, False, False]
 
 # Fill borderLines in the following order:
@@ -71,22 +71,22 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-                if event.key == pygame.K_UP or event.key == ord('w'):
+                if event.key == pygame.K_UP:
                     movement[0] = True
-                if event.key == pygame.K_DOWN or event.key == ord('s'):
+                if event.key == pygame.K_DOWN:
                     movement[1] = True
-                if event.key == pygame.K_LEFT or event.key == ord('a'):
+                if event.key == pygame.K_LEFT:
                     movement[2] = True
-                if event.key == pygame.K_RIGHT or event.key == ord('d'):
+                if event.key == pygame.K_RIGHT:
                     movement[3] = True
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_UP or event.key == ord('w'):
+                if event.key == pygame.K_UP:
                     movement[0] = False
-                if event.key == pygame.K_DOWN or event.key == ord('s'):
+                if event.key == pygame.K_DOWN:
                     movement[1] = False
-                if event.key == pygame.K_LEFT or event.key == ord('a'):
+                if event.key == pygame.K_LEFT:
                     movement[2] = False
-                if event.key == pygame.K_RIGHT or event.key == ord('d'):
+                if event.key == pygame.K_RIGHT:
                     movement[3] = False
         
         # Update the screen Contents
@@ -118,7 +118,6 @@ def Update():
         agent.xPos += MOVEMENT_SPEED
 
 def Render():
-    
     screen.fill(BACKGROUND_COLOUR)              # Fill the background of the windows to our predetermined colour
     FillInsideBorder(borderLines,screen)        # Fill inside the borders with our backround colour
     DrawGrid(screen, GRID_COLUMNS, GRID_ROWS)   # Draw the grid lines onto our screen
@@ -132,7 +131,7 @@ def Render():
     screen.blit(routerSurface, (0,0))           # Draw the router Surface onto our
     
     pygame.display.update()                     # update the display with the next frame
-    fps.tick(144)                               # Move to the next tick given 144 frames per second
+    fps.tick(250)                               # Move to the next tick given 144 frames per second
 
 def DrawBorders(borderLines,screen):
     for line in borderLines:

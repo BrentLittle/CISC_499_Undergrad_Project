@@ -1,6 +1,7 @@
 import pygame
 
 class AgentRouter(pygame.sprite.Sprite):
+
     def __init__(self, xPos, yPos, connectionRadius, borderLines):
         self.xPos = xPos
         self.yPos = yPos
