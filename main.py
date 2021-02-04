@@ -4,7 +4,6 @@ environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
 # IMPORTS
 import sys, pygame
-from pynput.keyboard import Key, Controller
 from Border import BorderLine
 from AgentRouter import AgentRouter
 from FixedRouter import FixedRouter
