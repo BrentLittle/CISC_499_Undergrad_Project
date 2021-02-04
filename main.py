@@ -8,10 +8,11 @@ from pynput.keyboard import Key, Controller
 from Border import BorderLine
 from AgentRouter import AgentRouter
 from FixedRouter import FixedRouter
+from Scene import Scene
 
 # INITIALIZE CONSTANTS
 WINDOWSIZE = WIDTH, HEIGHT  = (1000, 800)
-BORDERPADDING               = 50
+BORDER_PADDING               = 50
 
 #                           r   g   b   
 BACKGROUND_COLOUR       = (200,200,200)
@@ -29,8 +30,8 @@ GRID_COLUMNS    = 40
 GRID_ROWS       = 32
 MOVEMENT_SPEED  = 1
 
-CELL_WIDTH = ( WIDTH  - (BORDERPADDING * 2) ) / GRID_COLUMNS
-CELL_HEIGHT = ( HEIGHT - (BORDERPADDING * 2) ) / GRID_ROWS
+CELL_WIDTH = ( WIDTH  - (BORDER_PADDING * 2) ) / GRID_COLUMNS
+CELL_HEIGHT = ( HEIGHT - (BORDER_PADDING * 2) ) / GRID_ROWS
 
 # Initialize pygame and create window with no frame of a given size
 pygame.init()
@@ -56,22 +57,30 @@ movement = [False, False, False, False]
     # TOP, RIGHT, BOTTOM, LEFT
         # Left and Right Lines have start at the top of screen and end towards bottom of screen
         # Top and Bottom Lines have start at Left of screen and end towards the Right of screen.
-borderLines = [ BorderLine( BORDERPADDING - 1     , BORDERPADDING          , WIDTH - BORDERPADDING + 1 , BORDERPADDING              ),
-                BorderLine( WIDTH - BORDERPADDING , BORDERPADDING - 1      , WIDTH - BORDERPADDING     , HEIGHT - BORDERPADDING + 1 ),
-                BorderLine( BORDERPADDING - 1     , HEIGHT - BORDERPADDING , WIDTH - BORDERPADDING + 1 , HEIGHT - BORDERPADDING     ),
-                BorderLine( BORDERPADDING         , BORDERPADDING - 1      , BORDERPADDING             , HEIGHT - BORDERPADDING + 1 )]
+borderLines = [ BorderLine( BORDER_PADDING - 1     , BORDER_PADDING          , WIDTH - BORDER_PADDING + 1 , BORDER_PADDING              ),
+                BorderLine( WIDTH - BORDER_PADDING , BORDER_PADDING - 1      , WIDTH - BORDER_PADDING     , HEIGHT - BORDER_PADDING + 1 ),
+                BorderLine( BORDER_PADDING - 1     , HEIGHT - BORDER_PADDING , WIDTH - BORDER_PADDING + 1 , HEIGHT - BORDER_PADDING     ),
+                BorderLine( BORDER_PADDING         , BORDER_PADDING - 1      , BORDER_PADDING             , HEIGHT - BORDER_PADDING + 1 )]
 
 
 
 # Create our agent router object and place it at the center of the screen
-agent = AgentRouter((GRID_COLUMNS / 2), (GRID_ROWS / 2), 200, borderLines )
+agent = AgentRouter((GRID_COLUMNS / 2), (GRID_ROWS / 2), 200)
 
 # Create our fixed router objects and place them at designated arbitrary locations on the screen inside the borders
 fixedRouters = [FixedRouter( 10, 10, 200 ),
-                FixedRouter( 30, 10, 200 ),
-                FixedRouter( 10, 30, 200 ),
-                FixedRouter( 30, 30, 200 )]
+                FixedRouter( 29, 10, 200 ),
+                FixedRouter( 10, 22, 200 ),
+                FixedRouter( 29, 22, 200 )]
 
+scenes = [Scene(GRID_COLUMNS, GRID_ROWS)]
+currentScene = scenes[0]
+
+currentScene.AddAgent(agent)
+currentScene.AddFixedRouter(fixedRouters[0])
+currentScene.AddFixedRouter(fixedRouters[1])
+currentScene.AddFixedRouter(fixedRouters[2])
+currentScene.AddFixedRouter(fixedRouters[3])
 
 def main():
     while True:
@@ -106,41 +115,16 @@ def main():
 
 
 def Update():
-    if MOVEMENT_SPEED > agent.DistanceToTopBorder():
-        movement[0] == False
-    elif movement[0] == True:
-        agent.yPos -= MOVEMENT_SPEED
-    
-    if MOVEMENT_SPEED > agent.DistanceToBottomBorder():
-        movement[1] == False
-    elif movement[1] == True:
-        agent.yPos += MOVEMENT_SPEED
-
-    if MOVEMENT_SPEED > agent.DistanceToLeftBorder():
-        movement[2] == False
-    elif movement[2] == True:
-        agent.xPos -= MOVEMENT_SPEED
-
-    if MOVEMENT_SPEED > agent.DistanceToRightBorder():
-        movement[3] == False
-    elif movement[3] == True:
-        agent.xPos += MOVEMENT_SPEED
+    currentScene.Update()
 
 def Render():
     screen.fill(BACKGROUND_COLOUR)              # Fill the background of the windows to our predetermined colour
     FillInsideBorder(borderLines,screen)        # Fill inside the borders with our backround colour
-    DrawGrid(screen, GRID_COLUMNS, GRID_ROWS)   # Draw the grid lines onto our screen
-    DrawBorders(borderLines, screen)            # Draw the borders borders onto the screen
-    screen.blit(quitText,(20,20))               # Display the textsurface we want to show on the screen
-    
-    routerSurface.fill((0,0,0,0))               # Clear the routerSurface 
-    
-    RenderRouters()                             # Draw the routers onto the routerSurface
-    
-    screen.blit(routerSurface, (0,0))           # Draw the router Surface onto our screen
+
+    DrawScene(screen, currentScene)
     
     pygame.display.update()                     # update the display with the next frame
-    fps.tick(10)                               # Move to the next tick given 144 frames per second
+    fps.tick(20)                                # Move to the next tick given 144 frames per second
 
 def DrawBorders(borderLines,screen):
     for line in borderLines:
@@ -160,6 +144,55 @@ def FillInsideBorder(borderLines,screen):
         BORDER_INFILL_COLOUR,   # Colour to graw the polygon with
         points)                 # points of polygon to draw          
 
+def DrawScene(screen, scene):
+
+    DrawGrid(screen, scene.columns, scene.rows) # Draw the grids on the screen
+
+    routerSurface.fill((0,0,0,0))
+
+    DrawDevices(scene.devices) # Draw the devices on screen
+    DrawRouters(scene.fixedRouters) # Draw the fxed routers on screen
+    DrawRouters(scene.agentRouters) # Draw the agent routers on screen
+
+    screen.blit(routerSurface, (0,0))
+
+    DrawPadding(screen) # Draw the grey padding on the screen
+    DrawBorders(borderLines, screen) # Draw the black borders around the scene
+    screen.blit(quitText,(20,20)) # Draw the "Exit" text on screen
+
+def DrawDevices(devices):
+    deviceSurface = pygame.Surface(WINDOWSIZE, pygame.SRCALPHA)
+
+    for device in devices:
+
+        screenX, screenY = GridLocationToScreenLocation(device.xPos, device.yPos)
+
+        pygame.draw.circle(deviceSurface, (device.COLOUR), (screenX, screenY), device.radius) 
+
+    routerSurface.blit(deviceSurface, (0,0))
+
+def DrawPadding(screen):
+    
+    pygame.draw.rect(
+        screen,                 # Screen to draw to
+        BACKGROUND_COLOUR,      # Colour to graw the polygon with
+        (0, 0, BORDER_PADDING, HEIGHT)) # points of polygon to draw
+
+    pygame.draw.rect(
+        screen,                 # Screen to draw to
+        BACKGROUND_COLOUR,      # Colour to graw the polygon with
+        (WIDTH - BORDER_PADDING, 0, BORDER_PADDING, HEIGHT)) # points of polygon to draw
+
+    pygame.draw.rect(
+        screen,                 # Screen to draw to
+        BACKGROUND_COLOUR,      # Colour to graw the polygon with
+        (BORDER_PADDING, 0, WIDTH - (BORDER_PADDING * 2), BORDER_PADDING)) # points of polygon to draw
+
+    pygame.draw.rect(
+        screen,                 # Screen to draw to
+        BACKGROUND_COLOUR,      # Colour to graw the polygon with
+        (BORDER_PADDING, HEIGHT - BORDER_PADDING, WIDTH - (BORDER_PADDING * 2), BORDER_PADDING)) # points of polygon to draw
+
 def DrawGrid(screen, columns, rows):
     
     # Draw Vertical Grid Lines
@@ -168,8 +201,8 @@ def DrawGrid(screen, columns, rows):
         pygame.draw.line(
             screen,        # Surface  to draw to
             GRID_COLOUR,   # Colour of line
-            ( BORDERPADDING + ( CELL_WIDTH * x ), BORDERPADDING ),           # Start location of line
-            ( BORDERPADDING + ( CELL_WIDTH * x ), HEIGHT - BORDERPADDING ),  # end location of line
+            ( BORDER_PADDING + ( CELL_WIDTH * x ), BORDER_PADDING ),           # Start location of line
+            ( BORDER_PADDING + ( CELL_WIDTH * x ), HEIGHT - BORDER_PADDING ),  # end location of line
             2)             # Width of line
     # Draw Horizontal Grid Lines
     for y in range(rows - 1):
@@ -177,18 +210,18 @@ def DrawGrid(screen, columns, rows):
         pygame.draw.line(
             screen,          # Surface to draw to
             GRID_COLOUR,     # Colour of line
-            ( BORDERPADDING, BORDERPADDING + (CELL_HEIGHT * y) ),         # Start location of line
-            ( WIDTH - BORDERPADDING, BORDERPADDING + (CELL_HEIGHT * y) ), # end location of line
+            ( BORDER_PADDING, BORDER_PADDING + (CELL_HEIGHT * y) ),         # Start location of line
+            ( WIDTH - BORDER_PADDING, BORDER_PADDING + (CELL_HEIGHT * y) ), # end location of line
             2)               # Width of line
 
 def GridLocationToScreenLocation(xPos, yPos):
 
-    screenX = BORDERPADDING + (xPos * CELL_WIDTH) + (CELL_WIDTH / 2.0)
-    screenY = BORDERPADDING + (yPos * CELL_HEIGHT) + (CELL_HEIGHT / 2.0)
+    screenX = BORDER_PADDING + (xPos * CELL_WIDTH) + (CELL_WIDTH / 2.0)
+    screenY = BORDER_PADDING + (yPos * CELL_HEIGHT) + (CELL_HEIGHT / 2.0)
 
     return screenX, screenY
 
-def RenderRouters():
+def DrawRouters(routers):
     # Create new Surface to draw the Routers to
     transparentSurface = pygame.Surface(WINDOWSIZE, pygame.SRCALPHA)
 
@@ -196,32 +229,22 @@ def RenderRouters():
     screenY = 0
     
     # Draw the translucent part of the fixed routers to our transparentSurface then display on the screen
-    for fixedRouter in fixedRouters:
+    for router in routers:
 
-        screenX, screenY = GridLocationToScreenLocation(fixedRouter.xPos, fixedRouter.yPos)
+        screenX, screenY = GridLocationToScreenLocation(router.xPos, router.yPos)
 
-        pygame.draw.circle(transparentSurface, (FIXED_ROUTER_AREA_TRANSPARENCY), (screenX, screenY), fixedRouter.connectionRadius) 
-    routerSurface.blit(transparentSurface, (0,0))
-    
-    # Draw the translucent part of the Agent router to our transparentSurface then display on the screen
-    screenX, screenY = GridLocationToScreenLocation(agent.xPos, agent.yPos)
+        pygame.draw.circle(transparentSurface, (router.CONNECTION_COLOUR), (screenX, screenY), router.connectionRadius) 
 
-    pygame.draw.circle(transparentSurface, (AGENT_ROUTER_AREA_TRANSPARENCY), (screenX, screenY), agent.connectionRadius)
     routerSurface.blit(transparentSurface, (0,0))
     
     # Draw the opaque parts of the fixed routers to our transparentSurface then display on the screen
-    for fixedRouter in fixedRouters:
+    for router in routers:
 
-        screenX, screenY = GridLocationToScreenLocation(fixedRouter.xPos, fixedRouter.yPos)
+        screenX, screenY = GridLocationToScreenLocation(router.xPos, router.yPos)
 
-        pygame.draw.circle(transparentSurface, FIXED_ROUTER_COLOUR, (screenX, screenY), fixedRouter.radius)
-        pygame.draw.circle(transparentSurface, FIXED_ROUTER_COLOUR, (screenX, screenY), fixedRouter.connectionRadius, 2)
+        pygame.draw.circle(transparentSurface, router.COLOUR, (screenX, screenY), router.radius)
+        pygame.draw.circle(transparentSurface, router.COLOUR, (screenX, screenY), router.connectionRadius, 2)
     
-    # Draw the opaque parts of the Agent router on top of everything else then display on the screen
-    screenX, screenY = GridLocationToScreenLocation(agent.xPos, agent.yPos)
-
-    pygame.draw.circle(transparentSurface, AGENT_ROUTER_COLOUR, (screenX, screenY), agent.radius)
-    pygame.draw.circle(transparentSurface, AGENT_ROUTER_COLOUR, (screenX, screenY), agent.connectionRadius, 2)
     routerSurface.blit(transparentSurface, (0,0))
 
 if __name__ == '__main__':

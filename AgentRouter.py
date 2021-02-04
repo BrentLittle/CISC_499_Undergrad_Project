@@ -2,29 +2,34 @@ import pygame
 
 class AgentRouter(pygame.sprite.Sprite):
 
-    def __init__(self, xPos, yPos, connectionRadius, borderLines):
-        self.xPos = xPos
-        self.yPos = yPos
+#                         r    g    b    a
+    COLOUR            = (230, 184,   0, 255)
+    CONNECTION_COLOUR = (255, 224, 102,  50)
+
+    def __init__(self, xPos, yPos, connectionRadius):
+        self.xPos = round(xPos)
+        self.yPos = round(yPos)
         self.connectionRadius = connectionRadius
         self.radius = 12
-        self.borders = borderLines
+        self.scene = None
 
-    def DistanceToTopBorder(self):
-        upperEdgeofRouter = self.yPos - self.radius
-        borderYCoord = self.borders[0].startY
-        return upperEdgeofRouter - borderYCoord
+    def SetScene(self, scene):
+        self.scene = scene
 
-    def DistanceToRightBorder(self):
-        rightEdgeofRouter = self.xPos + self.radius
-        borderXCoord = self.borders[1].startX
-        return borderXCoord - rightEdgeofRouter
+    def Update(self):
+        self.Move(1, 0)
+    
+    def Move(self, xDelta, yDelta):
+        self.xPos += xDelta
+        self.yPos += yDelta
 
-    def DistanceToBottomBorder(self):
-        bottomEdgeofRouter = self.yPos + self.radius
-        borderYCoord = self.borders[2].startY
-        return borderYCoord - bottomEdgeofRouter
+        if(self.scene != None):
+            if (self.xPos >= self.scene.columns):
+                self.xPos = self.scene.columns - 1
+            elif (self.xPos < 0):
+                self.xPos = 0
 
-    def DistanceToLeftBorder(self):
-        leftEdgeofRouter = self.xPos - self.radius
-        borderXCoord = self.borders[3].startX
-        return leftEdgeofRouter - borderXCoord 
+            if (self.yPos >= self.scene.rows):
+                self.yPos = self.scene.rows - 1
+            elif (self.yPos < 0):
+                self.yPos = 0
