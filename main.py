@@ -13,11 +13,13 @@ from FixedRouter import FixedRouter
 WINDOWSIZE = WIDTH, HEIGHT  = (1000, 800)
 BORDERPADDING               = 50
 
+#                           r   g   b   
 BACKGROUND_COLOUR       = (200,200,200)
 BORDER_COLOUR           = (  0,  0,  0)
 BORDER_INFILL_COLOUR    = (255,255,255)
 GRID_COLOUR             = (235,235,235)
 
+#                                   r    g    b    a                                    
 AGENT_ROUTER_COLOUR             = (230, 184,   0, 255)
 AGENT_ROUTER_AREA_TRANSPARENCY  = (255, 224, 102,  50)
 FIXED_ROUTER_COLOUR             = ( 46, 184,  46, 255)
@@ -38,6 +40,8 @@ quitText= pygame.font.SysFont('arial', 16, True).render('Press \'ESC\' to Exit',
 screen = pygame.display.set_mode( WINDOWSIZE, pygame.NOFRAME  )
 routerSurface =   pygame.Surface( WINDOWSIZE, pygame.SRCALPHA )
 peopleSurface =   pygame.Surface( WINDOWSIZE, pygame.SRCALPHA )
+#                                             ^^^^^^^^^^^^^^^
+#                                             Allows for the surface to accept alpha values for objects to draw in the screen
 
 # setup a clock to limit the number of frames per second
 fps = pygame.time.Clock()
@@ -57,7 +61,7 @@ borderLines = [ BorderLine( BORDERPADDING - 1     , BORDERPADDING          , WID
 # Create our agent router object and place it at the center of the screen
 agent = AgentRouter((WIDTH / 2), (HEIGHT / 2), 200, borderLines )
 
-# Create our fixed router objects and place them at designated locations on the screen
+# Create our fixed router objects and place them at designated arbitrary locations on the screen inside the borders
 fixedRouters = [FixedRouter( 250        , 250         , 200 ),
                 FixedRouter( WIDTH - 250, 250         , 200 ),
                 FixedRouter( 250        , HEIGHT - 250, 200 ),
@@ -128,7 +132,7 @@ def Render():
     
     RenderRouters()                             # Draw the routers onto the routerSurface
     
-    screen.blit(routerSurface, (0,0))           # Draw the router Surface onto our
+    screen.blit(routerSurface, (0,0))           # Draw the router Surface onto our screen
     
     pygame.display.update()                     # update the display with the next frame
     fps.tick(250)                               # Move to the next tick given 144 frames per second
@@ -142,18 +146,18 @@ def DrawBorders(borderLines,screen):
                         4)              # Width of line
 
 def FillInsideBorder(borderLines,screen):
-    points = [  (borderLines[0].startX, borderLines[0].startY),     # Top Left
-                (borderLines[0].endX, borderLines[0].endY),         # Top Right
-                (borderLines[2].endX, borderLines[2].endY),         # Bottom Right
-                (borderLines[2].startX, borderLines[2].startY)]     # Bottom Left
+    points = [  ( borderLines[0].startX, borderLines[0].startY ),     # Top Left
+                ( borderLines[0].endX,   borderLines[0].endY   ),     # Top Right
+                ( borderLines[2].endX,   borderLines[2].endY   ),     # Bottom Right
+                 (borderLines[2].startX, borderLines[2].startY )]     # Bottom Left
     pygame.draw.polygon(
         screen,                 # Screen to draw to
         BORDER_INFILL_COLOUR,   # Colour to graw the polygon with
         points)                 # points of polygon to draw          
 
 def DrawGrid(screen, columns, rows):
-    horizCellDimension = ( WIDTH  - (BORDERPADDING * 2)) / columns
-    vertiCellDimension = ( HEIGHT - (BORDERPADDING * 2)) / rows
+    horizCellDimension = ( WIDTH  - (BORDERPADDING * 2) ) / columns
+    vertiCellDimension = ( HEIGHT - (BORDERPADDING * 2) ) / rows
     
     # Draw Vertical Grid Lines
     for x in range(columns - 1):
@@ -161,8 +165,8 @@ def DrawGrid(screen, columns, rows):
         pygame.draw.line(
             screen,        # Surface  to draw to
             GRID_COLOUR,   # Colour of line
-            ( BORDERPADDING + (horizCellDimension * x), BORDERPADDING),           # Start location of line
-            ( BORDERPADDING + (horizCellDimension * x), HEIGHT - BORDERPADDING),  # end location of line
+            ( BORDERPADDING + ( horizCellDimension * x ), BORDERPADDING ),           # Start location of line
+            ( BORDERPADDING + ( horizCellDimension * x ), HEIGHT - BORDERPADDING ),  # end location of line
             2)             # Width of line
     # Draw Horizontal Grid Lines
     for y in range(rows - 1):
