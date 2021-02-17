@@ -1,10 +1,12 @@
 import pygame
+import random
 
 class AgentRouter(pygame.sprite.Sprite):
 
 #                         r    g    b    a
     COLOUR            = (230, 184,   0, 255)
     CONNECTION_COLOUR = (255, 224, 102,  50)
+    ACTION_SET = ["STAY", "N", "E", "S", "W"]
 
     def __init__(self, xPos, yPos, connectionRadius):
         self.xPos = round(xPos)
@@ -17,7 +19,7 @@ class AgentRouter(pygame.sprite.Sprite):
         self.scene = scene
 
     def Update(self):
-        self.Move(1, 0)
+        return
     
     def Move(self, xDelta, yDelta):
         self.xPos += xDelta
