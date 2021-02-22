@@ -23,7 +23,8 @@ GRID_COLOUR             = (235,235,235)
 
 #                                   r    g    b    a                                    
 AGENT_ROUTER_COLOUR             = (230, 184,   0, 255)
-AGENT_ROUTER_AREA_TRANSPARENCY  = (255, 224, 102,  50)
+AGENT_ROUTER_AREA_TRANSPARENCY  = (255, 224, 102,  60)
+BOTH_ROUTER_AREA_TRANSPARENCY  = (255, 224, 102,  60)
 FIXED_ROUTER_COLOUR             = ( 46, 184,  46, 255)
 FIXED_ROUTER_AREA_TRANSPARENCY  = (153, 230, 153,  32)
 
@@ -68,7 +69,7 @@ borderLines = [ BorderLine( BORDER_PADDING - 1     , BORDER_PADDING          , W
 
 
 # Create our agent router object and place it at the center of the screen
-agent = AgentRouter(2, 9, 2)
+agent = AgentRouter(5, 5, 2)
 
 # Create our fixed router objects and place them at designated arbitrary locations on the screen inside the borders
 fixedRouters = [FixedRouter( 2, 2, 3 ),
@@ -81,13 +82,8 @@ currentScene.AddAgent(agent)
 currentScene.AddFixedRouter(fixedRouters[0])
 currentScene.AddFixedRouter(fixedRouters[1])
 
-currentScene.AddDevice(Device(1, 1, DYNAMIC_SCENE))
-currentScene.AddDevice(Device(11, 0, DYNAMIC_SCENE))
-currentScene.AddDevice(Device(8, 2, DYNAMIC_SCENE))
-currentScene.AddDevice(Device(4, 7, DYNAMIC_SCENE))
-currentScene.AddDevice(Device(2, 9, DYNAMIC_SCENE))
-currentScene.AddDevice(Device(8, 8, DYNAMIC_SCENE))
-currentScene.AddDevice(Device(6, 7, DYNAMIC_SCENE))
+for x in range(random.randint(6, 10)):
+    currentScene.AddDevice(Device(random.randint(0, GRID_COLUMNS - 1), random.randint(0, GRID_ROWS - 1), DYNAMIC_SCENE))
 
 def main():
     while True:
@@ -157,8 +153,7 @@ def DrawScene(screen, scene):
 
     routerSurface.fill((0,0,0,0))
 
-    DrawRouters(scene.fixedRouters) # Draw the fxed routers on screen
-    DrawRouters(scene.agentRouters) # Draw the agent routers on screen
+    DrawRouters(scene.fixedRouters + scene.agentRouters) # Draw the fxed routers on screen
     DrawDevices(scene.devices) # Draw the devices on screen
 
     screen.blit(routerSurface, (0,0))
@@ -246,16 +241,31 @@ def GridLocationToScreenLocation(xPos, yPos):
 def DrawRouters(routers):
     # Create new Surface to draw the Routers to
     transparentSurface = pygame.Surface(WINDOWSIZE, pygame.SRCALPHA)
+    grid = currentScene.state.GetGrid()
 
     screenX = 0
     screenY = 0
-    
-    # Draw the translucent part of the fixed routers to our transparentSurface then display on the screen
-    for router in routers:
 
-        screenX, screenY = GridLocationToScreenLocation(router.xPos, router.yPos)
+    for row in range(len(grid)):
+        for col in range(len(grid[row])):
 
-        pygame.draw.circle(transparentSurface, (router.CONNECTION_COLOUR), (screenX, screenY), (router.connectionRadius * CELL_WIDTH) + (CELL_WIDTH / 2)) 
+            fixedService = grid[row][col]["FixedService"]
+            agentService = grid[row][col]["AgentService"]
+
+            if(agentService):
+                screenX, screenY = GridLocationToScreenLocation(col, row)
+
+                pygame.draw.rect(
+                        transparentSurface,                 # Screen to draw to
+                        AGENT_ROUTER_AREA_TRANSPARENCY,      # Colour to graw the polygon with
+                        (screenX - (CELL_WIDTH / 2), screenY - (CELL_WIDTH / 2), CELL_WIDTH, CELL_HEIGHT)) # points of polygon to draw 
+            elif(fixedService):
+                screenX, screenY = GridLocationToScreenLocation(col, row)
+
+                pygame.draw.rect(
+                        transparentSurface,                 # Screen to draw to
+                        FIXED_ROUTER_AREA_TRANSPARENCY,      # Colour to graw the polygon with
+                        (screenX - (CELL_WIDTH / 2), screenY - (CELL_WIDTH / 2), CELL_WIDTH, CELL_HEIGHT)) # points of polygon to draw
 
     routerSurface.blit(transparentSurface, (0,0))
     
@@ -265,8 +275,6 @@ def DrawRouters(routers):
         screenX, screenY = GridLocationToScreenLocation(router.xPos, router.yPos)
 
         pygame.draw.circle(transparentSurface, router.COLOUR, (screenX, screenY), router.radius)
-        pygame.draw.circle(transparentSurface, router.COLOUR, (screenX, screenY), 
-                    (router.connectionRadius * CELL_WIDTH) + (CELL_WIDTH / 2) , 2)
     
     routerSurface.blit(transparentSurface, (0,0))
 

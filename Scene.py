@@ -38,7 +38,7 @@ class Scene():
 
         self.state = State(self.rows, self.columns, self.devices, self.fixedRouters, self.agentRouters)
 
-        if (self.tickCount % 2 == 0 and not self.isStatic):
+        if (self.tickCount % 10 == 0 and not self.isStatic):
             self.CreateDevice()
 
     def CreateFixedRouter(self, xPos, yPos, connectionRadius, borderLines):

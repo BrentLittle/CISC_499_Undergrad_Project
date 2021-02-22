@@ -26,6 +26,9 @@ class State(object):
 
         self.ParseState()
 
+    def GetGrid(self):
+        return self._grid
+
     def ParseState(self):
 
         for router in self._fixedRouters:

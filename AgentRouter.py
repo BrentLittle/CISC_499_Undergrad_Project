@@ -19,6 +19,15 @@ class AgentRouter(pygame.sprite.Sprite):
         self.scene = scene
 
     def Update(self):
+        
+        if(False):
+            direction = random.randint(0, 2)
+            
+            if(direction == 0):
+                self.Move(random.randint(-1, 1), 0)
+            elif(direction == 1):
+                self.Move(0, random.randint(-1, 1))
+
         return
     
     def Move(self, xDelta, yDelta):
