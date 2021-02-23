@@ -1,15 +1,17 @@
 from AgentRouter import AgentRouter
 from FixedRouter import FixedRouter
 from Device import Device
+from State import State
 import random
 
 class Scene():
 
-    def __init__(self, columns, rows):
+    def __init__(self, columns, rows, isStatic):
 
         self.fixedRouters = []
         self.agentRouters = []
         self.devices = []
+        self.state = None
 
         self._fixedRouterCount = 0
         self._agentCount = 0
@@ -19,6 +21,7 @@ class Scene():
 
         self.columns = columns
         self.rows = rows
+        self.isStatic = isStatic
 
     def Update(self):
 
@@ -33,7 +36,9 @@ class Scene():
         for agent in self.agentRouters:
             agent.Update()
 
-        if (self.tickCount % 2 == 0):
+        self.state = State(self.rows, self.columns, self.devices, self.fixedRouters, self.agentRouters)
+
+        if (self.tickCount % 10 == 0 and not self.isStatic):
             self.CreateDevice()
 
     def CreateFixedRouter(self, xPos, yPos, connectionRadius, borderLines):
@@ -90,7 +95,7 @@ class Scene():
             else:
                 xBias = random.random() * 2
 
-        device = Device(xPos, yPos)
+        device = Device(xPos, yPos, True)
         device.SetBias(xBias, yBias)
         self.devices.append(device)
         self._deviceCount += 1
