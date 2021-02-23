@@ -24,7 +24,7 @@ GRID_COLOUR             = (235,235,235)
 #                                   r    g    b    a                                    
 AGENT_ROUTER_COLOUR             = (230, 184,   0, 255)
 AGENT_ROUTER_AREA_TRANSPARENCY  = (255, 224, 102,  60)
-BOTH_ROUTER_AREA_TRANSPARENCY  = (255, 224, 102,  60)
+BOTH_ROUTER_AREA_TRANSPARENCY  = (220, 150, 102,  32)
 FIXED_ROUTER_COLOUR             = ( 46, 184,  46, 255)
 FIXED_ROUTER_AREA_TRANSPARENCY  = (153, 230, 153,  32)
 
@@ -252,7 +252,14 @@ def DrawRouters(routers):
             fixedService = grid[row][col]["FixedService"]
             agentService = grid[row][col]["AgentService"]
 
-            if(agentService):
+            if(agentService and fixedService):
+                screenX, screenY = GridLocationToScreenLocation(col, row)
+
+                pygame.draw.rect(
+                        transparentSurface,                 # Screen to draw to
+                        BOTH_ROUTER_AREA_TRANSPARENCY,      # Colour to graw the polygon with
+                        (screenX - (CELL_WIDTH / 2), screenY - (CELL_WIDTH / 2), CELL_WIDTH, CELL_HEIGHT)) # points of polygon to draw
+            elif(agentService):
                 screenX, screenY = GridLocationToScreenLocation(col, row)
 
                 pygame.draw.rect(
