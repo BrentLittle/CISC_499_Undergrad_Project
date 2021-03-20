@@ -1,5 +1,7 @@
 # DISABLE INITIAL PYGAME CONSOLE PRINT
 from os import environ
+
+from pygame.mixer import pause
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
 # IMPORTS
@@ -69,7 +71,7 @@ borderLines = [ BorderLine( BORDER_PADDING - 1     , BORDER_PADDING          , W
 
 
 # Create our agent router object and place it at the center of the screen
-agent = AgentRouter(5, 5, 2)
+agent = AgentRouter(5, 5, 2, False)
 
 # Create our fixed router objects and place them at designated arbitrary locations on the screen inside the borders
 fixedRouters = [FixedRouter( 2, 2, 3 ),
@@ -82,36 +84,34 @@ currentScene.AddAgent(agent)
 currentScene.AddFixedRouter(fixedRouters[0])
 currentScene.AddFixedRouter(fixedRouters[1])
 
-for x in range(random.randint(6, 10)):
-    currentScene.AddDevice(Device(random.randint(0, GRID_COLUMNS - 1), random.randint(0, GRID_ROWS - 1), DYNAMIC_SCENE))
+# for x in range(random.randint(6, 10)):
+    # currentScene.AddDevice(Device(random.randint(0, GRID_COLUMNS - 1), random.randint(0, GRID_ROWS - 1), DYNAMIC_SCENE))
+
+currentScene.AddDevice(Device(1, 5, DYNAMIC_SCENE))
+currentScene.AddDevice(Device(6, 6, DYNAMIC_SCENE))
+currentScene.AddDevice(Device(11, 3, DYNAMIC_SCENE))
+currentScene.AddDevice(Device(9, 6, DYNAMIC_SCENE))
+currentScene.AddDevice(Device(3, 9, DYNAMIC_SCENE))
+currentScene.AddDevice(Device(2, 8, DYNAMIC_SCENE))
 
 def main():
+
+    paused = False
+
     while True:
         for event in pygame.event.get(): 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-                if event.key == pygame.K_UP:
-                    movement[0] = True
-                if event.key == pygame.K_DOWN:
-                    movement[1] = True
-                if event.key == pygame.K_LEFT:
-                    movement[2] = True
-                if event.key == pygame.K_RIGHT:
-                    movement[3] = True
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_UP:
-                    movement[0] = False
-                if event.key == pygame.K_DOWN:
-                    movement[1] = False
-                if event.key == pygame.K_LEFT:
-                    movement[2] = False
-                if event.key == pygame.K_RIGHT:
-                    movement[3] = False
+                if event.key == pygame.K_SPACE:
+                    if(paused): paused = False
+                    else: paused = True
+
         
-        # Update the screen Contents
-        Update()
+        if(not paused):
+            # Update the screen Contents
+            Update()
         
         # Render the Screen Contents
         Render()
@@ -127,7 +127,7 @@ def Render():
     DrawScene(screen, currentScene)
     
     pygame.display.update()                     # update the display with the next frame
-    fps.tick(10)                                # Move to the next tick given 144 frames per second
+    fps.tick(1000)                                # Move to the next tick given 144 frames per second
 
 def DrawBorders(borderLines,screen):
     for line in borderLines:

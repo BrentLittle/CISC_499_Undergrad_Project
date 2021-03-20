@@ -1,10 +1,16 @@
 import copy
 import math
 
+collisionWithRouter = -40
+collisionWithWall = -10
+totalCoverageReward = 1
+serviceReward = 20
+
 class State(object):
 
     cellDict = {
         "FixedService": False,
+        "FixedRouterLocation": False,
         "AgentService": False,
         "DeviceCount": 0}
 
@@ -24,12 +30,27 @@ class State(object):
         self.coverage = 0
         self.interference = 0
 
-        self.ParseState()
+        self.lastDevicesServiced = 0
+        self.lastCoverage = 0
+        self.lastInterference = 0
+
+        self.baseReward = 0
 
     def GetGrid(self):
         return self._grid
 
     def ParseState(self):
+
+        self.lastDevicesServiced = self.devicesServiced
+        self.lastCoverage = self.coverage
+        self.lastInterference = self.interference
+
+        self._grid = [copy.deepcopy([copy.deepcopy(self.cellDict) for y in range(self._columns)]) for x in range(self._rows)]
+        self.devicesServiced = 0
+        self.coverage = 0
+        self.interference = 0
+
+        self.baseReward = 0
 
         for router in self._fixedRouters:
             self._FixedCoverage(router)
@@ -40,6 +61,18 @@ class State(object):
         for device in self._devices:
             self._CheckDevice(device)
 
+    def GetReward(self):
+
+        curCoverageRatio = (self.coverage / (self.interference + self.coverage))
+        lastCoverageRatio = 0
+
+        if(self.lastInterference + self.lastCoverage != 0): 
+            lastCoverageRatio = (self.lastCoverage / (self.lastInterference + self.lastCoverage))
+
+        curCoverageReward = curCoverageRatio * totalCoverageReward
+        curServiceReward = self.devicesServiced * serviceReward
+        return self.baseReward + curCoverageReward + curServiceReward
+
     def _VerifyGridLocation(self, column, row):
         if(row < 0 or column < 0 or row >= self._rows or column >= self._columns):
             return False
@@ -47,13 +80,31 @@ class State(object):
 
     def _AgentCoverage(self, agent):
 
+        collided = False
+        
+        if(agent.xPos < 0):
+            agent.xPos = 0
+            collided = True
+        elif(agent.xPos >= self._columns):
+            agent.xPos = self._columns - 1
+            collided = True
+
+        if(agent.yPos < 0):
+            agent.yPos = 0
+            collided = True
+        elif(agent.yPos >= self._rows):
+            agent.yPos = self._rows - 1
+            collided = True
+
+        if(collided): self.baseReward += collisionWithWall
+        
         x = agent.xPos
         y = agent.yPos
         cRad = agent.connectionRadius
 
-        minX = x - cRad
-        minY = y - cRad
         dia = (2 * cRad) + 1
+
+        if(self._grid[y][x]["FixedRouterLocation"]): self.baseReward += collisionWithRouter
 
         for xOffset in range(dia):
             for yOffset in range(dia):
@@ -62,6 +113,7 @@ class State(object):
                 col = (x - cRad) + xOffset
 
                 if(not self._VerifyGridLocation(col, row)):
+                    self.interference += 1
                     continue
                 
                 xDif = x - col
@@ -76,6 +128,9 @@ class State(object):
                         self.interference += 1
                     else:
                         self.coverage += 1
+        
+        #self.runningReward += (self.coverage / (self.interference + self.coverage)) * totalCoverageReward
+
 
     def _CheckDevice(self, device):
         
@@ -87,7 +142,7 @@ class State(object):
         if(not self._VerifyGridLocation(col, row)):
             return
         
-        if(self._grid[row][col]["AgentService"]):
+        if(not self._grid[row][col]["FixedService"] and self._grid[row][col]["AgentService"]):
             self.devicesServiced += 1
 
     def _FixedCoverage(self, router):
@@ -96,8 +151,8 @@ class State(object):
         y = router.yPos
         cRad = router.connectionRadius
 
-        minX = x - cRad
-        minY = y - cRad
+        self._grid[y][x]["FixedRouterLocation"] = True
+
         dia = (2 * cRad) + 1
 
         for xOffset in range(dia):

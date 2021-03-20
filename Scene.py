@@ -1,3 +1,4 @@
+from os import stat
 from AgentRouter import AgentRouter
 from FixedRouter import FixedRouter
 from Device import Device
@@ -22,6 +23,7 @@ class Scene():
         self.columns = columns
         self.rows = rows
         self.isStatic = isStatic
+        self.state = None
 
     def Update(self):
 
@@ -36,10 +38,15 @@ class Scene():
         for agent in self.agentRouters:
             agent.Update()
 
-        self.state = State(self.rows, self.columns, self.devices, self.fixedRouters, self.agentRouters)
+        if(self.state == None):
+                self.state = State(self.rows, self.columns, self.devices, self.fixedRouters, self.agentRouters)
+
+        self.state.ParseState()
 
         if (self.tickCount % 10 == 0 and not self.isStatic):
             self.CreateDevice()
+
+        agent.StepQ(self.state.GetReward())
 
     def CreateFixedRouter(self, xPos, yPos, connectionRadius, borderLines):
         fixedRouter = FixedRouter(xPos, yPos, connectionRadius, borderLines)
