@@ -1,23 +1,15 @@
 import pygame
 import random
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-
-from torchvision import datasets, transforms
-from torch.optim.lr_scheduler import StepLR
-
 import math as m
 
 SPACE_INIT_VALUE = 0                                                    # The value we use to init state action pairs in the Q table
 
 GAMMA = 0.8                                                             # The discount value
 ALPHA = 0.8                                                             # The the learning rate
-epsilon = 0.7                                                          # The exploration rate
+epsilon = 0.4                                                          # The exploration rate
 MAX_EPISODES = 35000                                                    # The iterations we use to determine convergence
-PLANNING_STEPS = 15                                                      # The number of planning steps we take
+PLANNING_STEPS = 50                                                      # The number of planning steps we take
 EPSILON_DECAY = 0.95
 EPSILON_DECAY_FREQUENCY = 1000
 
@@ -46,7 +38,7 @@ class AgentRouter(pygame.sprite.Sprite):
 
         self.Q = {GetHash(self.currentState) : [SPACE_INIT_VALUE for x in range(len(ACTION_SET))]}
         self.model = {GetHash(self.currentState) : [[] for x in range(len(ACTION_SET))]}
-        self.visitedStates = []
+        self.visitedStates = {}
 
         if (importPolicy) :
             #self.Q = ImportQTable(Q_FILENAME)
@@ -93,9 +85,11 @@ class AgentRouter(pygame.sprite.Sprite):
         # Planning steps
         for n in range(PLANNING_STEPS) :
 
-            if(self.visitedStates == []) : break # If there are no previously visited states action pairs, then we want to break
+            if(self.visitedStates == {}) : break # If there are no previously visited states action pairs, then we want to break
+
+            keyList = list(self.visitedStates.keys())
             
-            chosenStateAction = random.randint(0, len(self.visitedStates) - 1) # Randomly get the index for a state action pair
+            chosenStateAction = keyList[random.randint(0, len(keyList) - 1)] # Randomly get the index for a state action pair
             s1 = self.visitedStates[chosenStateAction][0] # Get the state
             a1 = self.visitedStates[chosenStateAction][1] # Get the action
 
@@ -109,12 +103,9 @@ class AgentRouter(pygame.sprite.Sprite):
 
             self.Q = UpdateQ(self.Q, s1, a1, observedReward, sPrime) # Update the Q table
 
-        self.visitedStates.append([self.currentState, self.actionTaken]) # append our state to the visited states
+        self.visitedStates[GetHash([self.currentState, self.actionTaken])] = [self.currentState, self.actionTaken] # append our state to the visited states
 
-        if(len(self.visitedStates) > PLANNING_STEPS):
-            self.visitedStates.remove(self.visitedStates[0])
-
-        self.currentState = self.nextState # update our current state
+        self.currentState = [self.nextState[0], self.nextState[1]]# update our current state
 
         self.stepCounter += 1
         if(self.stepCounter == EPSILON_DECAY_FREQUENCY):
@@ -139,6 +130,20 @@ class AgentRouter(pygame.sprite.Sprite):
                 self.yPos = self.scene.rows - 1
             elif (self.yPos < 0):
                 self.yPos = 0
+
+    def SetPosition(self, newX, newY):
+
+        self.xPos = newX
+        self.yPos = newY
+
+        self.currentState = [newX, newY]
+
+        # If our next state is not in the Q table, then add it to both the Q table and the model
+        if(self.Q.get(GetHash(self.currentState)) == None) :
+            self.Q = AddState(self.Q, self.currentState)
+            self.model = AddModel(self.model, self.currentState)
+
+
 
 
 def ImportQTable(fileName):

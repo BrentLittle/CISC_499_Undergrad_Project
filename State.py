@@ -1,10 +1,11 @@
 import copy
 import math
 
-collisionWithRouter = -40
-collisionWithWall = -10
-totalCoverageReward = 1
-serviceReward = 20
+collisionWithRouter = -2
+collisionWithWall = -1
+totalCoverageReward = 0
+serviceReward = 3
+stayReward = 0
 
 class State(object):
 
@@ -61,17 +62,20 @@ class State(object):
         for device in self._devices:
             self._CheckDevice(device)
 
-    def GetReward(self):
+    def GetReward(self, takenAction):
 
         curCoverageRatio = (self.coverage / (self.interference + self.coverage))
         lastCoverageRatio = 0
+        actionReward = 0
+
+        if(takenAction == 0): actionReward = stayReward
 
         if(self.lastInterference + self.lastCoverage != 0): 
             lastCoverageRatio = (self.lastCoverage / (self.lastInterference + self.lastCoverage))
 
         curCoverageReward = curCoverageRatio * totalCoverageReward
         curServiceReward = self.devicesServiced * serviceReward
-        return self.baseReward + curCoverageReward + curServiceReward
+        return self.baseReward + curCoverageReward + curServiceReward + actionReward
 
     def _VerifyGridLocation(self, column, row):
         if(row < 0 or column < 0 or row >= self._rows or column >= self._columns):
@@ -96,7 +100,9 @@ class State(object):
             agent.yPos = self._rows - 1
             collided = True
 
-        if(collided): self.baseReward += collisionWithWall
+        if(collided): 
+            self.baseReward += collisionWithWall
+            print("That is a wall")
         
         x = agent.xPos
         y = agent.yPos

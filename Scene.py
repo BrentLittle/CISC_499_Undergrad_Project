@@ -1,4 +1,6 @@
 from os import stat
+
+from pygame import math
 from AgentRouter import AgentRouter
 from FixedRouter import FixedRouter
 from Device import Device
@@ -46,7 +48,25 @@ class Scene():
         if (self.tickCount % 10 == 0 and not self.isStatic):
             self.CreateDevice()
 
-        agent.StepQ(self.state.GetReward())
+        for agent in self.agentRouters:
+            agent.StepQ(self.state.GetReward(agent.actionTaken))
+
+    def ToggleExploration(self):
+        willExplore = not self.agentRouters[0].exploring
+
+        print("Agent exploration is set to " + str(willExplore) + "...")
+
+        for router in self.agentRouters:
+            router.exploring = willExplore
+
+    def ShuffleAgentRouters(self):
+
+        for router in self.agentRouters:
+            newX = random.randint(0, self.columns - 1)
+            newY = random.randint(0, self.rows - 1)
+
+            router.SetPosition(newX, newY)
+
 
     def CreateFixedRouter(self, xPos, yPos, connectionRadius, borderLines):
         fixedRouter = FixedRouter(xPos, yPos, connectionRadius, borderLines)

@@ -75,7 +75,7 @@ agent = AgentRouter(5, 5, 2, False)
 
 # Create our fixed router objects and place them at designated arbitrary locations on the screen inside the borders
 fixedRouters = [FixedRouter( 2, 2, 3 ),
-                FixedRouter( 9, 9, 3 )]
+                FixedRouter( 9, 4, 3 )]
 
 scenes = [Scene(GRID_COLUMNS, GRID_ROWS, not DYNAMIC_SCENE)]
 currentScene = scenes[0]
@@ -105,8 +105,17 @@ def main():
                     pygame.quit()
                     sys.exit()
                 if event.key == pygame.K_SPACE:
-                    if(paused): paused = False
-                    else: paused = True
+                    if(paused): 
+                        paused = False
+                        print("Resuming simulation...")
+                    else: 
+                        paused = True
+                        print("Pausing simulation...")
+                if event.key == pygame.K_e:
+                    currentScene.ToggleExploration()
+                if event.key == pygame.K_r:
+                    currentScene.ShuffleAgentRouters()
+                    print("Randomizing agent location...")
 
         
         if(not paused):
