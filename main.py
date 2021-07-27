@@ -1,17 +1,20 @@
 # DISABLE INITIAL PYGAME CONSOLE PRINT
 from os import environ
+
+from pygame.mixer import pause
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
 # IMPORTS
 import sys, pygame
-from pynput.keyboard import Key, Controller
 from Border import BorderLine
 from AgentRouter import AgentRouter
 from FixedRouter import FixedRouter
+from Device import Device
 from Scene import Scene
+import random
 
 # INITIALIZE CONSTANTS
-WINDOWSIZE = WIDTH, HEIGHT  = (1000, 800)
+WINDOWSIZE = WIDTH, HEIGHT  = (1000, 1000)
 BORDER_PADDING               = 50
 
 #                           r   g   b   
@@ -22,16 +25,19 @@ GRID_COLOUR             = (235,235,235)
 
 #                                   r    g    b    a                                    
 AGENT_ROUTER_COLOUR             = (230, 184,   0, 255)
-AGENT_ROUTER_AREA_TRANSPARENCY  = (255, 224, 102,  50)
+AGENT_ROUTER_AREA_TRANSPARENCY  = (255, 224, 102,  60)
+BOTH_ROUTER_AREA_TRANSPARENCY  = (220, 150, 102,  32)
 FIXED_ROUTER_COLOUR             = ( 46, 184,  46, 255)
 FIXED_ROUTER_AREA_TRANSPARENCY  = (153, 230, 153,  32)
 
-GRID_COLUMNS    = 40
-GRID_ROWS       = 32
+GRID_COLUMNS    = 12
+GRID_ROWS       = 12
 MOVEMENT_SPEED  = 1
 
 CELL_WIDTH = ( WIDTH  - (BORDER_PADDING * 2) ) / GRID_COLUMNS
 CELL_HEIGHT = ( HEIGHT - (BORDER_PADDING * 2) ) / GRID_ROWS
+
+DYNAMIC_SCENE = False
 
 # Initialize pygame and create window with no frame of a given size
 pygame.init()
@@ -65,50 +71,56 @@ borderLines = [ BorderLine( BORDER_PADDING - 1     , BORDER_PADDING          , W
 
 
 # Create our agent router object and place it at the center of the screen
-agent = AgentRouter((GRID_COLUMNS / 2), (GRID_ROWS / 2), 200)
+agent = AgentRouter(5, 5, 2, False)
 
 # Create our fixed router objects and place them at designated arbitrary locations on the screen inside the borders
-fixedRouters = [FixedRouter( 10, 10, 200 ),
-                FixedRouter( 29, 10, 200 ),
-                FixedRouter( 10, 22, 200 ),
-                FixedRouter( 29, 22, 200 )]
+fixedRouters = [FixedRouter( 2, 2, 3 ),
+                FixedRouter( 9, 4, 3 )]
 
-scenes = [Scene(GRID_COLUMNS, GRID_ROWS)]
+scenes = [Scene(GRID_COLUMNS, GRID_ROWS, not DYNAMIC_SCENE)]
 currentScene = scenes[0]
 
 currentScene.AddAgent(agent)
 currentScene.AddFixedRouter(fixedRouters[0])
 currentScene.AddFixedRouter(fixedRouters[1])
-currentScene.AddFixedRouter(fixedRouters[2])
-currentScene.AddFixedRouter(fixedRouters[3])
+
+# for x in range(random.randint(6, 10)):
+    # currentScene.AddDevice(Device(random.randint(0, GRID_COLUMNS - 1), random.randint(0, GRID_ROWS - 1), DYNAMIC_SCENE))
+
+currentScene.AddDevice(Device(1, 5, DYNAMIC_SCENE))
+currentScene.AddDevice(Device(6, 6, DYNAMIC_SCENE))
+currentScene.AddDevice(Device(11, 3, DYNAMIC_SCENE))
+currentScene.AddDevice(Device(9, 6, DYNAMIC_SCENE))
+currentScene.AddDevice(Device(3, 9, DYNAMIC_SCENE))
+currentScene.AddDevice(Device(2, 8, DYNAMIC_SCENE))
 
 def main():
+
+    paused = False
+
     while True:
         for event in pygame.event.get(): 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
-                if event.key == pygame.K_UP:
-                    movement[0] = True
-                if event.key == pygame.K_DOWN:
-                    movement[1] = True
-                if event.key == pygame.K_LEFT:
-                    movement[2] = True
-                if event.key == pygame.K_RIGHT:
-                    movement[3] = True
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_UP:
-                    movement[0] = False
-                if event.key == pygame.K_DOWN:
-                    movement[1] = False
-                if event.key == pygame.K_LEFT:
-                    movement[2] = False
-                if event.key == pygame.K_RIGHT:
-                    movement[3] = False
+                if event.key == pygame.K_SPACE:
+                    if(paused): 
+                        paused = False
+                        print("Resuming simulation...")
+                    else: 
+                        paused = True
+                        print("Pausing simulation...")
+                if event.key == pygame.K_e:
+                    currentScene.ToggleExploration()
+                if event.key == pygame.K_r:
+                    currentScene.ShuffleAgentRouters()
+                    print("Randomizing agent location...")
+
         
-        # Update the screen Contents
-        Update()
+        if(not paused):
+            # Update the screen Contents
+            Update()
         
         # Render the Screen Contents
         Render()
@@ -124,7 +136,7 @@ def Render():
     DrawScene(screen, currentScene)
     
     pygame.display.update()                     # update the display with the next frame
-    fps.tick(20)                                # Move to the next tick given 144 frames per second
+    fps.tick(1000)                                # Move to the next tick given 144 frames per second
 
 def DrawBorders(borderLines,screen):
     for line in borderLines:
@@ -135,9 +147,9 @@ def DrawBorders(borderLines,screen):
                         4)              # Width of line
 
 def FillInsideBorder(borderLines,screen):
-    points = [  ( borderLines[0].startX, borderLines[0].startY ),     # Top Left
-                ( borderLines[0].endX,   borderLines[0].endY   ),     # Top Right
-                ( borderLines[2].endX,   borderLines[2].endY   ),     # Bottom Right
+    points = [  (borderLines[0].startX, borderLines[0].startY ),     # Top Left
+                (borderLines[0].endX,   borderLines[0].endY   ),     # Top Right
+                (borderLines[2].endX,   borderLines[2].endY   ),     # Bottom Right
                 (borderLines[2].startX, borderLines[2].startY )]     # Bottom Left
     pygame.draw.polygon(
         screen,                 # Screen to draw to
@@ -150,18 +162,32 @@ def DrawScene(screen, scene):
 
     routerSurface.fill((0,0,0,0))
 
+    DrawRouters(scene.fixedRouters + scene.agentRouters) # Draw the fxed routers on screen
     DrawDevices(scene.devices) # Draw the devices on screen
-    DrawRouters(scene.fixedRouters) # Draw the fxed routers on screen
-    DrawRouters(scene.agentRouters) # Draw the agent routers on screen
 
     screen.blit(routerSurface, (0,0))
 
     DrawPadding(screen) # Draw the grey padding on the screen
     DrawBorders(borderLines, screen) # Draw the black borders around the scene
+    DrawText(screen)
+
+def DrawText(screen):
     screen.blit(quitText,(20,20)) # Draw the "Exit" text on screen
+    
+    rawStatText = ["","",""]
+
+    rawStatText[0] = "Surface Coverage: " + str(currentScene.state.coverage)
+    rawStatText[1] = "Interference: " + str(currentScene.state.interference)
+    rawStatText[2] = "Devices Serviced: " + str(currentScene.state.devicesServiced)
+
+    for i in range(len(rawStatText)):
+        renderedStats = pygame.font.SysFont('arial', 16, True).render(rawStatText[i], False, (0, 0, 0))
+        screen.blit(renderedStats,(20 + (200 * i),HEIGHT - 40))
 
 def DrawDevices(devices):
     deviceSurface = pygame.Surface(WINDOWSIZE, pygame.SRCALPHA)
+
+    #print(len(devices))
 
     for device in devices:
 
@@ -224,16 +250,38 @@ def GridLocationToScreenLocation(xPos, yPos):
 def DrawRouters(routers):
     # Create new Surface to draw the Routers to
     transparentSurface = pygame.Surface(WINDOWSIZE, pygame.SRCALPHA)
+    grid = currentScene.state.GetGrid()
 
     screenX = 0
     screenY = 0
-    
-    # Draw the translucent part of the fixed routers to our transparentSurface then display on the screen
-    for router in routers:
 
-        screenX, screenY = GridLocationToScreenLocation(router.xPos, router.yPos)
+    for row in range(len(grid)):
+        for col in range(len(grid[row])):
 
-        pygame.draw.circle(transparentSurface, (router.CONNECTION_COLOUR), (screenX, screenY), router.connectionRadius) 
+            fixedService = grid[row][col]["FixedService"]
+            agentService = grid[row][col]["AgentService"]
+
+            if(agentService and fixedService):
+                screenX, screenY = GridLocationToScreenLocation(col, row)
+
+                pygame.draw.rect(
+                        transparentSurface,                 # Screen to draw to
+                        BOTH_ROUTER_AREA_TRANSPARENCY,      # Colour to graw the polygon with
+                        (screenX - (CELL_WIDTH / 2), screenY - (CELL_WIDTH / 2), CELL_WIDTH, CELL_HEIGHT)) # points of polygon to draw
+            elif(agentService):
+                screenX, screenY = GridLocationToScreenLocation(col, row)
+
+                pygame.draw.rect(
+                        transparentSurface,                 # Screen to draw to
+                        AGENT_ROUTER_AREA_TRANSPARENCY,      # Colour to graw the polygon with
+                        (screenX - (CELL_WIDTH / 2), screenY - (CELL_WIDTH / 2), CELL_WIDTH, CELL_HEIGHT)) # points of polygon to draw 
+            elif(fixedService):
+                screenX, screenY = GridLocationToScreenLocation(col, row)
+
+                pygame.draw.rect(
+                        transparentSurface,                 # Screen to draw to
+                        FIXED_ROUTER_AREA_TRANSPARENCY,      # Colour to graw the polygon with
+                        (screenX - (CELL_WIDTH / 2), screenY - (CELL_WIDTH / 2), CELL_WIDTH, CELL_HEIGHT)) # points of polygon to draw
 
     routerSurface.blit(transparentSurface, (0,0))
     
@@ -243,7 +291,6 @@ def DrawRouters(routers):
         screenX, screenY = GridLocationToScreenLocation(router.xPos, router.yPos)
 
         pygame.draw.circle(transparentSurface, router.COLOUR, (screenX, screenY), router.radius)
-        pygame.draw.circle(transparentSurface, router.COLOUR, (screenX, screenY), router.connectionRadius, 2)
     
     routerSurface.blit(transparentSurface, (0,0))
 
