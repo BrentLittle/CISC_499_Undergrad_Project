@@ -1,5 +1,6 @@
 # CISC 499 Undergraduate Project: 
 # Automated Wifi Router Location Adjustment
+## By Matt Denny, Brent Littlefield and Matt Neufeld
 
 ## Introduction
 
